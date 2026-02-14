@@ -28,25 +28,27 @@ class GatewayService {
         this.ws = new WebSocket('ws://127.0.0.1:18789');
       }
 
-      this.ws.onopen = () => {
-        console.log('Connected to OpenClaw gateway');
-        this.isConnected = true;
-        this.reconnectAttempts = 0;
-      };
+      if (this.ws) {
+        this.ws.onopen = () => {
+          console.log('Connected to OpenClaw gateway');
+          this.isConnected = true;
+          this.reconnectAttempts = 0;
+        };
 
-      this.ws.onmessage = (event) => {
-        this.handleMessage(event.data);
-      };
+        this.ws.onmessage = (event) => {
+          this.handleMessage(event.data);
+        };
 
-      this.ws.onclose = () => {
-        console.log('Disconnected from OpenClaw gateway');
-        this.isConnected = false;
-        this.attemptReconnect();
-      };
+        this.ws.onclose = () => {
+          console.log('Disconnected from OpenClaw gateway');
+          this.isConnected = false;
+          this.attemptReconnect();
+        };
 
-      this.ws.onerror = (error) => {
-        console.error('WebSocket error:', error);
-      };
+        this.ws.onerror = (error) => {
+          console.error('WebSocket error:', error);
+        };
+      }
     } catch (error) {
       console.error('Failed to connect to OpenClaw gateway:', error);
       this.attemptReconnect();
@@ -100,19 +102,19 @@ class GatewayService {
   }
 
   // Set callbacks for data updates
-  public setMissionsUpdateCallback(callback: (missions: Mission[]) => void) {
+  public setMissionsUpdateCallback(callback: ((missions: Mission[]) => void) | null) {
     this.onMissionsUpdate = callback;
   }
 
-  public setSideHustlesUpdateCallback(callback: (sideHustles: SideHustle[]) => void) {
+  public setSideHustlesUpdateCallback(callback: ((sideHustles: SideHustle[]) => void) | null) {
     this.onSideHustlesUpdate = callback;
   }
 
-  public setSystemStatusUpdateCallback(callback: (status: SystemStatus) => void) {
+  public setSystemStatusUpdateCallback(callback: ((status: SystemStatus) => void) | null) {
     this.onSystemStatusUpdate = callback;
   }
 
-  public setAgentStatusUpdateCallback(callback: (agents: AgentStatus[]) => void) {
+  public setAgentStatusUpdateCallback(callback: ((agents: AgentStatus[]) => void) | null) {
     this.onAgentStatusUpdate = callback;
   }
 

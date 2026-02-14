@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { gatewayService } from '@/services/gatewayService';
-import { SystemStatus } from '@/types';
+import type { SystemStatus } from '@/types';
 
 export default function SystemStatus() {
   const [systemStatus, setSystemStatus] = useState<SystemStatus | null>(null);
