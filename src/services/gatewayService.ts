@@ -22,10 +22,14 @@ class GatewayService {
     try {
       // In a browser environment, we would use the native WebSocket
       // For Node.js environments, we use the 'ws' library
+      const token = '31233123'; // From ~/.openclaw/openclaw.json
+      
       if (typeof window !== 'undefined') {
-        this.ws = new WebSocket('ws://127.0.0.1:18789') as any;
+        // Browser environment
+        this.ws = new WebSocket(`ws://127.0.0.1:18789?token=${token}`) as any;
       } else {
-        this.ws = new WebSocket('ws://127.0.0.1:18789');
+        // Node.js environment
+        this.ws = new WebSocket(`ws://127.0.0.1:18789?token=${token}`);
       }
 
       if (this.ws) {
@@ -33,6 +37,9 @@ class GatewayService {
           console.log('Connected to OpenClaw gateway');
           this.isConnected = true;
           this.reconnectAttempts = 0;
+          
+          // Request initial data
+          this.sendMessage('get_initial_data');
         };
 
         this.ws.onmessage = (event) => {

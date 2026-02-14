@@ -1,15 +1,13 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Enable local network access
+  images: {
+    unoptimized: true,
+  },
+  // Serve on local network
   async rewrites() {
-    return [
-      {
-        source: '/:path*',
-        destination: '/:path*'
-      }
-    ]
-  }
+    return [];
+  },
 };
 
 export default nextConfig;

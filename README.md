@@ -1,158 +1,150 @@
-# 🦉 Mission Control Dashboard
+# 🦉 Mission Control — Caleb AI Dashboard
 
-A sleek, sci-fi inspired dashboard for Caleb - your AI Chief of Staff. This dashboard provides real-time visibility into active missions, side hustles, and system status by connecting to the OpenClaw gateway.
+> A retro pixel-art styled Mission Control dashboard for Caleb, the AI Chief of Staff.
 
-## 🚀 Features
+![Version](https://img.shields.io/badge/version-1.0.0-cyan)
+![Next.js](https://img.shields.io/badge/Next.js-15-black)
+![Tailwind](https://img.shields.io/badge/Tailwind-4-blue)
 
-- **Active Missions**: Real-time view of currently running sub-agent tasks with progress indicators
-- **Mission Queue**: Upcoming tasks in the execution queue
-- **Recently Completed**: Recently finished tasks with results
-- **Side Hustle Tracker**: Monitor ongoing projects and revenue generation
-- **System Status**: AI model usage, API health, and uptime metrics
-- **Sci-fi Aesthetic**: Dark theme with grid background, animations, and status indicators
-- **Real-time Updates**: WebSocket connection to OpenClaw gateway for live data
+## ✨ Features
 
-## 🛠️ Tech Stack
+### v1 Core Features
+- **Status Board** — Kanban-style mission tracking with real-time status updates
+- **Activity Feed** — Live log of all Caleb and sub-agent activities
+- **System Stats** — Uptime, task completion, resource gauges, and activity graphs
+- **Quick Actions** — One-click commands for common operations
+- **Minion Squad** — Visual representation of all active sub-agents
 
-- [Next.js 15](https://nextjs.org/) - React framework with App Router
-- [TypeScript](https://www.typescriptlang.org/) - Type safety
-- [Tailwind CSS](https://tailwindcss.com/) - Styling
-- [Framer Motion](https://www.framer.com/motion/) - Animations
-- [WebSocket](https://github.com/websockets/ws) - Real-time communication
+### Design Highlights
+- 🎮 **Pixel Art Aesthetic** — Retro game-inspired UI with crisp pixel borders
+- 🌈 **Neon Accents** — Cyan, pink, and yellow neon glow effects
+- 📺 **CRT Effects** — Scanlines and flicker for authentic retro feel
+- 🎭 **Animated Characters** — Caleb the Owl and his minion agents with working animations
+- ✨ **Smooth Animations** — Framer Motion powered transitions
 
-## 🎯 Design Vision
+## 🚀 Quick Start
 
-- Dark theme with sci-fi mission control aesthetic
-- Main header with owl emoji and status indicator (online/working/idle)
-- Animated sections with smooth transitions
-- Little animated "minion" icons (🤖) next to active sub-agent tasks
-- Subtle particle effects and grid background animation
-- Mobile-responsive design
+### Prerequisites
+- Node.js 18+ 
+- npm or yarn
 
-## 🏗️ Getting Started
+### Installation
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/calebmoores/mission-control.git
-   cd mission-control
-   ```
+```bash
+# Clone or navigate to the project
+cd mission-control
 
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
+# Install dependencies
+npm install
 
-3. Run the development server:
-   ```bash
-   npm run dev
-   ```
-
-4. Open [http://localhost:3000](http://localhost:3000) with your browser
-
-## 🌐 Network Access
-
-To make the dashboard accessible on your local network:
-
-1. Find your machine's IP address:
-   ```bash
-   # On Linux/Mac
-   ifconfig
-   # or
-   ip addr show
-   
-   # On Windows
-   ipconfig
-   ```
-
-2. Update `next.config.ts` to allow external connections:
-   ```typescript
-   import type { NextConfig } from "next";
-   
-   const nextConfig: NextConfig = {
-     // Add this to allow external connections
-     async rewrites() {
-       return [
-         {
-           source: '/:path*',
-           destination: 'http://localhost:3000/:path*'
-         }
-       ]
-     }
-   };
-   
-   export default nextConfig;
-   ```
-
-3. Run with host binding:
-   ```bash
-   npm run dev -- -H 0.0.0.0
-   ```
-
-## 📡 OpenClaw Gateway Integration
-
-The dashboard connects to the OpenClaw gateway at `ws://127.0.0.1:18789` to pull session/task data. Ensure the gateway is running for real-time updates.
-
-## 📁 Project Structure
-
-```
-src/
-├── app/                 # Next.js app router pages
-├── components/          # React components
-├── services/            # Gateway service and data handling
-├── types/               # TypeScript interfaces
-└── ...
+# Start development server
+npm run dev
 ```
 
-## 🤖 Component Overview
+The dashboard will be available at:
+- Local: `http://localhost:3000`
+- Network: `http://0.0.0.0:3000` (use `npm run dev:network`)
 
-- `Header.tsx` - Main dashboard header with status indicator
-- `MissionCard.tsx` - Reusable mission card component
-- `ActiveMissions.tsx` - Active mission tracking section
-- `MissionQueue.tsx` - Upcoming mission queue
-- `CompletedMissions.tsx` - Recently completed tasks
-- `SideHustleTracker.tsx` - Side project monitoring
-- `SystemStatus.tsx` - System health and metrics
-- `gatewayService.ts` - WebSocket connection to OpenClaw
+### Build for Production
 
-## 🎨 Animations
+```bash
+npm run build
+npm start
+```
 
-- Framer Motion for smooth transitions and hover effects
-- CSS keyframe animations for status indicators and minion icons
-- Staggered loading animations for dashboard sections
+## 🏗️ Project Structure
 
-## 📱 Responsive Design
+```
+mission-control/
+├── src/
+│   ├── app/
+│   │   ├── globals.css      # Global styles with pixel-art theme
+│   │   ├── layout.tsx       # Root layout with CRT effects
+│   │   └── page.tsx         # Main dashboard page
+│   ├── components/
+│   │   ├── CalebOwl.tsx     # Main character component
+│   │   ├── MinionAgent.tsx  # Sub-agent visual component
+│   │   ├── StatusBoard.tsx  # Mission kanban board
+│   │   ├── ActivityFeed.tsx # Real-time activity log
+│   │   ├── SystemStats.tsx  # Stats and gauges
+│   │   └── QuickActions.tsx # Action buttons panel
+│   ├── data/
+│   │   └── mockData.ts      # Realistic mock data
+│   └── types/
+│       └── index.ts         # TypeScript definitions
+├── public/                  # Static assets
+└── package.json
+```
 
-- Mobile-first approach with Tailwind's responsive utilities
-- Flexible grid layouts that adapt to screen size
-- Touch-friendly controls and readable text sizes
+## 🎨 Customization
 
-## 🚧 Development
+### Adding New Minion Types
+Edit `src/components/MinionAgent.tsx`:
+```typescript
+const minionColors = {
+  yourType: { main: '#yourColor', dark: '#darkVariant', light: '#lightVariant' },
+};
+```
 
-1. Make changes to components in `src/components/`
-2. Update types in `src/types/` as needed
-3. Modify styles in `src/app/globals.css`
-4. Test with `npm run dev`
+### Adding New Quick Actions
+Edit `src/components/QuickActions.tsx`:
+```typescript
+const defaultActions: QuickAction[] = [
+  { id: 'your-action', label: 'YOUR LABEL', icon: '🔧', color: 'cyan' },
+];
+```
 
-## 📤 Deployment
+### Customizing the Theme
+Edit `src/app/globals.css`:
+```css
+:root {
+  --primary: 100 220 180;    /* Cyan accent */
+  --secondary: 255 120 180;  /* Pink accent */
+  --accent: 255 200 80;      /* Yellow accent */
+}
+```
 
-This dashboard is designed for local network deployment rather than public hosting. For external access:
+## 🔌 API Integration
 
-1. Configure your firewall to allow connections on port 3000
-2. Set up reverse proxy with nginx if needed
-3. Consider authentication for sensitive data
+To connect to a real backend, modify the data fetching in `src/app/page.tsx`:
 
-## 🤝 Contributing
+```typescript
+useEffect(() => {
+  // Replace mock data with real API calls
+  fetch('/api/missions')
+    .then(res => res.json())
+    .then(data => setMissions(data));
+}, []);
+```
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+## 🖥️ Display Requirements
 
-## 📄 License
+For the best retro experience:
+- **Recommended Resolution**: 1920x1080 or higher
+- **Browser**: Chrome, Firefox, Safari (latest)
+- **Pixel Rendering**: CSS `image-rendering: pixelated` enabled
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+## 📝 Future Enhancements
 
-## 🦉 About Caleb
+- [ ] WebSocket integration for real-time updates
+- [ ] User authentication and role management
+- [ ] Mission creation/editing interface
+- [ ] Historical analytics and reporting
+- [ ] Mobile-responsive layout
+- [ ] Dark/Light theme toggle
+- [ ] Sound effects and ambient audio
 
-Caleb is your AI Chief of Staff, managing side hustles and background tasks. This dashboard provides a mission control center for monitoring all of Caleb's activities.
+## 🤝 Credits
+
+Built with:
+- [Next.js](https://nextjs.org/) — React framework
+- [Tailwind CSS](https://tailwindcss.com/) — Utility-first CSS
+- [Framer Motion](https://www.framer.com/motion/) — Animations
+- [VT323](https://fonts.google.com/specimen/VT323) & [Press Start 2P](https://fonts.google.com/specimen/Press+Start+2P) — Pixel fonts
+
+---
+
+<p align="center">
+  <strong>🦉 CALEB — CHIEF OF STAFF</strong><br>
+  <em>Mission Control Dashboard v1.0.0</em>
+</p>

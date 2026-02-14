@@ -1,14 +1,19 @@
+export type MissionStatus = 'active' | 'queued' | 'blocked' | 'completed';
+export type MissionPriority = 'critical' | 'high' | 'medium' | 'low';
+export type AgentType = 'caleb' | 'coder' | 'researcher' | 'writer' | 'analyst';
+export type AgentStatus = 'online' | 'working' | 'idle' | 'offline' | 'busy';
+
 export interface Mission {
   id: string;
   title: string;
   description: string;
-  status: 'active' | 'queued' | 'completed';
-  priority: 'low' | 'medium' | 'high' | 'critical';
+  status: MissionStatus;
+  priority: MissionPriority;
   createdAt: Date;
   updatedAt: Date;
   completedAt?: Date;
   assignedAgent?: string;
-  progress?: number; // 0-100
+  progress?: number;
   result?: string;
 }
 
@@ -17,7 +22,7 @@ export interface SideHustle {
   name: string;
   description: string;
   status: 'researching' | 'building' | 'launching' | 'running' | 'paused';
-  revenue?: number; // in cents or smallest currency unit
+  revenue?: number;
   createdAt: Date;
   updatedAt: Date;
   metrics?: {
@@ -28,7 +33,7 @@ export interface SideHustle {
 }
 
 export interface SystemStatus {
-  uptime: number; // in seconds
+  uptime: number;
   modelUsage: {
     model: string;
     tokensUsed: number;
@@ -37,15 +42,44 @@ export interface SystemStatus {
   apiStatus: {
     service: string;
     status: 'online' | 'offline' | 'degraded';
-    responseTime?: number; // in ms
+    responseTime?: number;
   }[];
   lastUpdated: Date;
 }
 
-export interface AgentStatus {
+export interface AgentInfo {
   id: string;
   name: string;
-  status: 'online' | 'working' | 'idle' | 'offline';
+  status: AgentStatus;
   currentTask?: string;
   lastActive: Date;
+}
+
+export interface Activity {
+  id: string;
+  timestamp: Date;
+  agent: string;
+  agentType: AgentType;
+  action: string;
+  target?: string;
+  status: 'completed' | 'in-progress' | 'failed';
+}
+
+export interface Minion {
+  id: string;
+  name: string;
+  type: AgentType;
+  status: AgentStatus;
+  currentTask?: string;
+  lastActive: Date;
+}
+
+export interface DashboardStats {
+  totalMissions: number;
+  activeMissions: number;
+  completedToday: number;
+  blockedMissions: number;
+  uptime: number;
+  activeAgents: number;
+  tasksCompletedToday: number;
 }
