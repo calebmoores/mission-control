@@ -10,6 +10,8 @@ interface Activity {
   action: string;
   target?: string;
   status: 'completed' | 'in-progress' | 'failed';
+  icon?: string;
+  category?: string;
 }
 
 interface ActivityFeedProps {
@@ -49,6 +51,20 @@ export default function ActivityFeed({ activities }: ActivityFeedProps) {
     });
   };
 
+  // Ensure we have activities to display
+  const displayActivities = activities.length > 0 ? activities : [
+    {
+      id: '1',
+      timestamp: new Date(),
+      agent: 'Caleb',
+      agentType: 'caleb' as const,
+      action: 'system initialized',
+      target: 'Mission Control',
+      status: 'completed' as const,
+      icon: '🦉',
+    },
+  ];
+
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
@@ -61,14 +77,14 @@ export default function ActivityFeed({ activities }: ActivityFeedProps) {
       </div>
 
       {/* Activity List */}
-      <div 
+      <div
         ref={scrollRef}
         className="flex-1 overflow-y-auto space-y-1 pr-2 font-mono text-sm"
         style={{ maxHeight: '300px' }}
       >
-        {activities.map((activity, index) => (
+        {displayActivities.map((activity, index) => (
           <div
-            key={activity.id}
+            key={`${activity.id}-${index}`}
             className={`activity-item py-2 ${index === 0 ? 'active' : ''} animate-fade-in-left`}
             style={{ animationDelay: `${index * 0.02}s` }}
           >
@@ -80,7 +96,7 @@ export default function ActivityFeed({ activities }: ActivityFeedProps) {
             {/* Content */}
             <div className="flex items-start gap-2">
               {/* Agent Icon */}
-              <span className="text-lg">{agentIcons[activity.agentType]}</span>
+              <span className="text-lg">{activity.icon || agentIcons[activity.agentType] || '🤖'}</span>
 
               <div className="flex-1 min-w-0">
                 {/* Agent Name */}
@@ -103,11 +119,11 @@ export default function ActivityFeed({ activities }: ActivityFeedProps) {
                 {/* Status Indicator */}
                 <div className="flex items-center gap-2 mt-1">
                   <span className={`font-terminal text-xs ${statusColors[activity.status]}`}>
-                    {activity.status === 'in-progress' ? '▶ RUNNING' : 
-                     activity.status === 'completed' ? '✓ DONE' : 
+                    {activity.status === 'in-progress' ? '▶ RUNNING' :
+                     activity.status === 'completed' ? '✓ DONE' :
                      '✗ FAILED'}
                   </span>
-                  
+
                   {activity.status === 'in-progress' && (
                     <div className="typing-indicator scale-50 origin-left">
                       <span></span>
@@ -122,7 +138,7 @@ export default function ActivityFeed({ activities }: ActivityFeedProps) {
         ))}
 
         {/* Empty State */}
-        {activities.length === 0 && (
+        {displayActivities.length === 0 && (
           <div className="text-center py-8">
             <span className="font-terminal text-gray-600">NO ACTIVITY RECORDED</span>
           </div>
@@ -134,19 +150,19 @@ export default function ActivityFeed({ activities }: ActivityFeedProps) {
         <div className="grid grid-cols-3 gap-2 text-center">
           <div>
             <div className="font-pixel text-xs text-green-400">
-              {activities.filter(a => a.status === 'completed').length}
+              {displayActivities.filter(a => a.status === 'completed').length}
             </div>
             <div className="font-terminal text-xs text-gray-500">DONE</div>
           </div>
           <div>
             <div className="font-pixel text-xs text-yellow-400">
-              {activities.filter(a => a.status === 'in-progress').length}
+              {displayActivities.filter(a => a.status === 'in-progress').length}
             </div>
             <div className="font-terminal text-xs text-gray-500">ACTIVE</div>
           </div>
           <div>
             <div className="font-pixel text-xs text-red-400">
-              {activities.filter(a => a.status === 'failed').length}
+              {displayActivities.filter(a => a.status === 'failed').length}
             </div>
             <div className="font-terminal text-xs text-gray-500">FAILED</div>
           </div>

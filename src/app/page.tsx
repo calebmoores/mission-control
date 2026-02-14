@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import CalebOwl from '@/components/CalebOwl';
-import MinionAgent from '@/components/MinionAgent';
+import PixelOffice from '@/components/PixelOffice';
 import StatusBoard from '@/components/StatusBoard';
 import ActivityFeed from '@/components/ActivityFeed';
 import SystemStats from '@/components/SystemStats';
@@ -20,6 +21,7 @@ interface ApiSession {
   assignedAgent: string;
   progress?: number;
   agentRole?: string;
+  agentType?: 'caleb' | 'coder' | 'researcher' | 'writer' | 'analyst';
 }
 
 interface ApiStatus {
@@ -48,24 +50,50 @@ interface ApiActivity {
   action: string;
   target?: string;
   status: 'completed' | 'in-progress' | 'failed';
+  icon?: string;
+  category?: string;
 }
 
-// Fallback mock minions
-const mockMinions = [
-  { name: 'Code-01', type: 'coder' as const, status: 'working' as const, currentTask: 'API Integration...' },
-  { name: 'Research-02', type: 'researcher' as const, status: 'working' as const, currentTask: 'Monitoring...' },
-  { name: 'Writer-01', type: 'writer' as const, status: 'idle' as const },
-  { name: 'Analyst-01', type: 'analyst' as const, status: 'working' as const, currentTask: 'Processing...' },
-  { name: 'Code-02', type: 'coder' as const, status: 'busy' as const, currentTask: 'Debugging...' },
-  { name: 'Writer-02', type: 'writer' as const, status: 'idle' as const },
-];
+// Office agents with dynamic status based on missions
+const getOfficeAgents = (missions: Mission[]) => {
+  const baseAgents = [
+    { id: 'caleb', name: 'Caleb', role: 'Chief of Staff', type: 'caleb' as const, x: 4, y: 4, facing: 'south' as const },
+    { id: 'code-01', name: 'Code-01', role: 'Lead Dev', type: 'coder' as const, x: 1, y: 1, facing: 'east' as const },
+    { id: 'code-02', name: 'Code-02', role: 'Backend Dev', type: 'coder' as const, x: 1, y: 3, facing: 'east' as const },
+    { id: 'research-01', name: 'Research-01', role: 'Data Scout', type: 'researcher' as const, x: 7, y: 1, facing: 'west' as const },
+    { id: 'writer-01', name: 'Writer-01', role: 'Content Lead', type: 'writer' as const, x: 7, y: 3, facing: 'west' as const },
+    { id: 'analyst-01', name: 'Analyst-01', role: 'Metrics', type: 'analyst' as const, x: 4, y: 7, facing: 'north' as const },
+  ];
 
-// Fallback mock activities
-const mockActivities: Activity[] = [
-  { id: '1', timestamp: new Date(Date.now() - 1000 * 30), agent: 'Caleb', agentType: 'caleb', action: 'system online', target: 'Mission Control', status: 'completed' },
-  { id: '2', timestamp: new Date(Date.now() - 1000 * 120), agent: 'CodeMinion-01', agentType: 'coder', action: 'fetching data', target: 'OpenClaw Gateway', status: 'completed' },
-  { id: '3', timestamp: new Date(Date.now() - 1000 * 180), agent: 'System', agentType: 'analyst', action: 'polling', target: 'API endpoints', status: 'in-progress' },
-];
+  return baseAgents.map(agent => {
+    // Find mission for this agent
+    const agentMission = missions.find(m =>
+      m.assignedAgent?.toLowerCase().includes(agent.name.toLowerCase()) ||
+      m.assignedAgent?.toLowerCase().includes(agent.type)
+    );
+
+    let status: 'idle' | 'working' | 'busy' = 'idle';
+    let currentTask: string | undefined;
+
+    if (agentMission) {
+      if (agentMission.status === 'active') {
+        status = 'working';
+        currentTask = agentMission.title;
+      } else if (agentMission.status === 'blocked') {
+        status = 'busy';
+        currentTask = 'Handling issue...';
+      }
+    }
+
+    // Caleb is always working if any mission is active
+    if (agent.id === 'caleb' && missions.some(m => m.status === 'active')) {
+      status = 'working';
+      currentTask = 'Overseeing operations';
+    }
+
+    return { ...agent, status, currentTask };
+  });
+};
 
 // Convert API session to Mission format
 function apiSessionToMission(session: ApiSession): Mission {
@@ -100,10 +128,11 @@ export default function MissionControl() {
   const [uptime, setUptime] = useState(0);
   const [calebTyping, setCalebTyping] = useState(true);
   const [missions, setMissions] = useState<Mission[]>([]);
-  const [activities, setActivities] = useState<Activity[]>(mockActivities);
+  const [activities, setActivities] = useState<Activity[]>([]);
   const [systemStatus, setSystemStatus] = useState<ApiStatus | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [view, setView] = useState<'office' | 'board'>('office');
 
   // Fetch data from API
   const fetchData = async () => {
@@ -128,15 +157,26 @@ export default function MissionControl() {
         setMissions(mappedMissions);
       }
 
-      // Update activities from cron jobs
-      if (cronData.activities) {
-        const mappedActivities = cronData.activities.map(apiActivityToActivity);
-        // Combine with mock activities if we have fewer than 3
-        if (mappedActivities.length < 3) {
-          setActivities([...mappedActivities, ...mockActivities.slice(0, 3 - mappedActivities.length)]);
-        } else {
-          setActivities(mappedActivities);
-        }
+      // Update activities from cron jobs and sessions
+      const mappedCronActivities = cronData.activities?.map(apiActivityToActivity) || [];
+      const mappedSessionActivities = sessionsData.missions
+        ?.filter((m: ApiSession) => m.status === 'active')
+        .map((m: ApiSession) => ({
+          id: m.id,
+          timestamp: new Date(m.updatedAt),
+          agent: m.assignedAgent || 'SYSTEM',
+          agentType: m.agentType || 'coder',
+          action: 'executing mission',
+          target: m.title,
+          status: 'in-progress' as const,
+        })) || [];
+
+      // Combine and deduplicate activities
+      const combinedActivities = [...mappedCronActivities, ...mappedSessionActivities]
+        .slice(0, 10);
+
+      if (combinedActivities.length > 0) {
+        setActivities(combinedActivities);
       }
 
       // Update system status
@@ -188,13 +228,16 @@ export default function MissionControl() {
     return () => clearInterval(typingInterval);
   }, []);
 
-  const activeMinions = mockMinions.filter(m => m.status === 'working' || m.status === 'busy').length;
+  const activeMinions = missions.filter(m => m.status === 'active').length;
   const tasksCompleted = missions.filter(m => m.status === 'completed').length;
 
   // Get model name for display
   const modelName = systemStatus?.model
     ? systemStatus.model.split('/').pop()?.toUpperCase() || 'CLAUDE'
     : 'CLAUDE-OPUS';
+
+  // Get office agents based on current missions
+  const officeAgents = getOfficeAgents(missions);
 
   return (
     <div className="min-h-screen p-4 md:p-6">
@@ -216,29 +259,39 @@ export default function MissionControl() {
             </div>
           </div>
 
-          {/* Status Bar */}
-          <div className="flex items-center gap-6 bg-gray-900/50 border border-gray-800 px-4 py-2">
-            <div className="text-center">
-              <div className="font-terminal text-xs text-gray-500">TIME</div>
-              <div className="font-pixel text-sm text-cyan-400">
-                {currentTime.toLocaleTimeString('en-US', { hour12: false })}
+          {/* Navigation */}
+          <div className="flex items-center gap-4">
+            <Link
+              href="/review"
+              className="px-4 py-2 bg-gray-900/50 border border-gray-700 hover:border-cyan-400/50 hover:bg-cyan-400/10 transition-all font-terminal text-sm text-gray-400 hover:text-cyan-400"
+            >
+              📝 CONTENT REVIEW
+            </Link>
+
+            {/* Status Bar */}
+            <div className="flex items-center gap-6 bg-gray-900/50 border border-gray-800 px-4 py-2">
+              <div className="text-center">
+                <div className="font-terminal text-xs text-gray-500">TIME</div>
+                <div className="font-pixel text-sm text-cyan-400">
+                  {currentTime.toLocaleTimeString('en-US', { hour12: false })}
+                </div>
               </div>
-            </div>
-            <div className="w-px h-8 bg-gray-700" />
-            <div className="text-center">
-              <div className="font-terminal text-xs text-gray-500">UPTIME</div>
-              <div className="font-pixel text-sm text-green-400">
-                {systemStatus?.uptimeFormatted ||
-                  `${Math.floor(uptime / 3600).toString().padStart(2, '0')}:` +
-                  `${Math.floor((uptime % 3600) / 60).toString().padStart(2, '0')}:` +
-                  `${(uptime % 60).toString().padStart(2, '0')}`}
+              <div className="w-px h-8 bg-gray-700" />
+              <div className="text-center">
+                <div className="font-terminal text-xs text-gray-500">UPTIME</div>
+                <div className="font-pixel text-sm text-green-400">
+                  {systemStatus?.uptimeFormatted ||
+                    `${Math.floor(uptime / 3600).toString().padStart(2, '0')}:` +
+                    `${Math.floor((uptime % 3600) / 60).toString().padStart(2, '0')}:` +
+                    `${(uptime % 60).toString().padStart(2, '0')}`}
+                </div>
               </div>
-            </div>
-            <div className="w-px h-8 bg-gray-700" />
-            <div className="text-center">
-              <div className="font-terminal text-xs text-gray-500">VERSION</div>
-              <div className="font-pixel text-sm text-yellow-400">
-                {systemStatus?.version || 'v1.0.0'}
+              <div className="w-px h-8 bg-gray-700" />
+              <div className="text-center">
+                <div className="font-terminal text-xs text-gray-500">VERSION</div>
+                <div className="font-pixel text-sm text-yellow-400">
+                  {systemStatus?.version || 'v1.0.0'}
+                </div>
               </div>
             </div>
           </div>
@@ -261,83 +314,150 @@ export default function MissionControl() {
             </span>
           </div>
         )}
+
+        {/* View Toggle */}
+        <div className="mt-4 flex items-center gap-2">
+          <button
+            onClick={() => setView('office')}
+            className={`px-4 py-2 font-terminal text-sm transition-all ${
+              view === 'office'
+                ? 'bg-cyan-400/20 border border-cyan-400 text-cyan-400'
+                : 'bg-gray-900/50 border border-gray-700 text-gray-500 hover:text-gray-400'
+            }`}
+          >
+            🏢 PIXEL OFFICE
+          </button>
+          <button
+            onClick={() => setView('board')}
+            className={`px-4 py-2 font-terminal text-sm transition-all ${
+              view === 'board'
+                ? 'bg-purple-400/20 border border-purple-400 text-purple-400'
+                : 'bg-gray-900/50 border border-gray-700 text-gray-500 hover:text-gray-400'
+            }`}
+          >
+            📋 MISSION BOARD
+          </button>
+        </div>
       </header>
 
-      {/* Main Grid Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+      {/* Main Content */}
+      {view === 'office' ? (
+        /* Pixel Office View */
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+          {/* Left Sidebar - Quick Actions */}
+          <div className="lg:col-span-2 space-y-4 animate-fade-in-left" style={{ animationDelay: '0.1s' }}>
+            <div className="bg-gray-900/50 border-2 border-gray-800 p-4">
+              <QuickActions />
+            </div>
 
-        {/* Left Sidebar - Minions */}
-        <div
-          className="lg:col-span-2 space-y-4 animate-fade-in-left"
-          style={{ animationDelay: '0.1s' }}
-        >
-          {/* Minion Squad */}
-          <div className="bg-gray-900/50 border-2 border-gray-800 p-4">
-            <h2 className="font-pixel text-xs text-purple-400 mb-4">MINION SQUAD</h2>
-            <div className="grid grid-cols-2 gap-4">
-              {mockMinions.map((minion, index) => (
-                <div
-                  key={minion.name}
-                  className="animate-scale-in"
-                  style={{ animationDelay: `${0.2 + index * 0.05}s` }}
-                >
-                  <MinionAgent {...minion} />
-                </div>
-              ))}
+            {/* System Stats */}
+            <div className="bg-gray-900/50 border-2 border-gray-800 p-4">
+              <SystemStats
+                uptime={uptime}
+                tasksCompleted={tasksCompleted}
+                activeAgents={systemStatus?.sessions?.active || activeMinions}
+                totalSessions={systemStatus?.sessions?.total}
+                cpuUsage={42}
+                memoryUsage={58}
+              />
             </div>
           </div>
 
-          {/* Quick Actions */}
-          <div className="bg-gray-900/50 border-2 border-gray-800 p-4">
-            <QuickActions />
-          </div>
-        </div>
-
-        {/* Center - Status Board */}
-        <div
-          className="lg:col-span-7 animate-fade-in-up"
-          style={{ animationDelay: '0.2s' }}
-        >
-          <div className="bg-gray-900/50 border-2 border-gray-800 p-4 h-full">
-            <StatusBoard
-              missions={missions.length > 0 ? missions : [{
-                id: 'loading',
-                title: 'Loading sessions...',
-                description: 'Fetching data from OpenClaw gateway',
-                status: 'active',
-                priority: 'high',
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                assignedAgent: 'SYSTEM',
-                progress: 50,
-              }]}
-            />
-          </div>
-        </div>
-
-        {/* Right Sidebar */}
-        <div
-          className="lg:col-span-3 space-y-4 animate-fade-in-right"
-          style={{ animationDelay: '0.3s' }}
-        >
-          {/* System Stats */}
-          <div className="bg-gray-900/50 border-2 border-gray-800 p-4">
-            <SystemStats
-              uptime={uptime}
-              tasksCompleted={tasksCompleted}
-              activeAgents={systemStatus?.sessions?.active || activeMinions}
-              totalSessions={systemStatus?.sessions?.total}
-              cpuUsage={42}
-              memoryUsage={58}
-            />
+          {/* Center - Pixel Office */}
+          <div className="lg:col-span-7 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+            <div className="bg-gray-900/50 border-2 border-gray-800 p-4 h-[600px]">
+              <PixelOffice
+                agents={officeAgents}
+                missions={missions.map(m => ({ id: m.id, title: m.title, status: m.status, assignedAgent: m.assignedAgent || '' }))}
+              />
+            </div>
           </div>
 
-          {/* Activity Feed */}
-          <div className="bg-gray-900/50 border-2 border-gray-800 p-4">
-            <ActivityFeed activities={activities} />
+          {/* Right Sidebar - Activity & Mini Board */}
+          <div className="lg:col-span-3 space-y-4 animate-fade-in-right" style={{ animationDelay: '0.3s' }}>
+            {/* Activity Feed */}
+            <div className="bg-gray-900/50 border-2 border-gray-800 p-4">
+              <ActivityFeed activities={activities} />
+            </div>
+
+            {/* Quick Mission Preview */}
+            <div className="bg-gray-900/50 border-2 border-gray-800 p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="font-pixel text-sm text-yellow-400">ACTIVE MISSIONS</h2>
+                <button
+                  onClick={() => setView('board')}
+                  className="text-xs font-terminal text-cyan-400 hover:text-cyan-300"
+                >
+                  VIEW ALL →
+                </button>
+              </div>
+              <div className="space-y-2">
+                {missions.filter(m => m.status === 'active').slice(0, 3).map((mission, i) => (
+                  <div key={mission.id} className="bg-gray-800/50 p-2 border-l-2 border-cyan-400">
+                    <div className="font-terminal text-xs text-gray-300 truncate">{mission.title}</div>
+                    <div className="font-terminal text-[10px] text-gray-500">{mission.assignedAgent}</div>
+                  </div>
+                ))}
+                {missions.filter(m => m.status === 'active').length === 0 && (
+                  <div className="text-center py-4 text-gray-600 font-terminal text-sm">
+                    NO ACTIVE MISSIONS
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      ) : (
+        /* Mission Board View */
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+          {/* Left Sidebar */}
+          <div className="lg:col-span-2 space-y-4 animate-fade-in-left" style={{ animationDelay: '0.1s' }}>
+            {/* Quick Actions */}
+            <div className="bg-gray-900/50 border-2 border-gray-800 p-4">
+              <QuickActions />
+            </div>
+          </div>
+
+          {/* Center - Status Board */}
+          <div className="lg:col-span-7 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+            <div className="bg-gray-900/50 border-2 border-gray-800 p-4 h-full">
+              <StatusBoard
+                missions={missions.length > 0 ? missions : [{
+                  id: 'loading',
+                  title: 'Loading sessions...',
+                  description: 'Fetching data from OpenClaw gateway',
+                  status: 'active',
+                  priority: 'high',
+                  createdAt: new Date(),
+                  updatedAt: new Date(),
+                  assignedAgent: 'SYSTEM',
+                  progress: 50,
+                }]}
+              />
+            </div>
+          </div>
+
+          {/* Right Sidebar */}
+          <div className="lg:col-span-3 space-y-4 animate-fade-in-right" style={{ animationDelay: '0.3s' }}>
+            {/* System Stats */}
+            <div className="bg-gray-900/50 border-2 border-gray-800 p-4">
+              <SystemStats
+                uptime={uptime}
+                tasksCompleted={tasksCompleted}
+                activeAgents={systemStatus?.sessions?.active || activeMinions}
+                totalSessions={systemStatus?.sessions?.total}
+                cpuUsage={42}
+                memoryUsage={58}
+              />
+            </div>
+
+            {/* Activity Feed */}
+            <div className="bg-gray-900/50 border-2 border-gray-800 p-4">
+              <ActivityFeed activities={activities} />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Footer */}
       <footer
