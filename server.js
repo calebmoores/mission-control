@@ -9,7 +9,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Serve the main page
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'src/app/page.tsx'));
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // Serve the test page
