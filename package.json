@@ -7,9 +7,12 @@
     "dev:network": "next dev --hostname 0.0.0.0 --port 3000",
     "build": "next build",
     "start": "next start",
+    "serve": "node server.js",
     "lint": "eslint"
   },
   "dependencies": {
+    "@types/express": "^5.0.6",
+    "express": "^5.2.1",
     "framer-motion": "^12.34.0",
     "next": "16.1.6",
     "react": "19.2.3",
